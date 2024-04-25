@@ -51,9 +51,9 @@ class EspressoServerRunnerTest {
 
     private val syncComposeClock = Thread {
         while (!Server.isStopRequestReceived) {
-            if (context.currentStrategyType == DriverContext.StrategyType.COMPOSE) {
-                composeTestRule.mainClock.advanceTimeByFrame()
-            }
+//            if (context.currentStrategyType == DriverContext.StrategyType.COMPOSE) {
+            composeTestRule.mainClock.advanceTimeByFrame()
+//            }
             // Let Android run measure, draw and in general any other async operations. AndroidComposeTestRule.android.kt:325
             Thread.sleep(ANDROID_ASYNC_WAIT_TIME_MS)
         }
