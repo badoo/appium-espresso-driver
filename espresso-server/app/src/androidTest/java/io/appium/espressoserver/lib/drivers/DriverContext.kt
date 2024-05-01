@@ -17,12 +17,21 @@
 package io.appium.espressoserver.lib.drivers
 
 class DriverContext {
+
+    var driverContextChangeListener: DriverContextChangeListener? = null
+
+    interface DriverContextChangeListener {
+        fun onDriverStrategyChanged(strategyType: StrategyType)
+    }
+
     var currentStrategyType: StrategyType = StrategyType.ESPRESSO
         private set
 
     fun setDriverStrategy(strategyType: StrategyType) {
         currentStrategyType = strategyType
+        driverContextChangeListener?.onDriverStrategyChanged(strategyType)
     }
+
 
     enum class StrategyType {
         ESPRESSO, COMPOSE

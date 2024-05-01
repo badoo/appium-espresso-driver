@@ -16,6 +16,7 @@
 
 package io.appium.espressoserver
 
+import androidx.compose.ui.test.IdlingResource
 import org.junit.Assume
 import org.junit.Test
 
@@ -32,6 +33,8 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.isAccessible
 
 /**
  * Instrumentation test, which will execute on an Android device.
@@ -49,11 +52,43 @@ class EspressoServerRunnerTest {
         composeTestRule = it
     }
 
+    private inline fun <reified T : Any, R> T.getPrivateProperty(name: String): R? =
+        T::class
+            .memberProperties
+            .firstOrNull { it.name == name }
+            ?.apply { isAccessible = true }
+            ?.get(this) as? R
+
+
+    private val composeIdlingResource = composeTestRule
+        .getPrivateProperty<AndroidComposeTestRule<*, *>, IdlingResource>("composeIdlingResource")
+
+    private val listener = object : DriverContext.DriverContextChangeListener {
+        override fun onDriverStrategyChanged(strategyType: DriverContext.StrategyType) {
+            if (strategyType == DriverContext.StrategyType.ESPRESSO) {
+                composeIdlingResource?.let {
+                    composeTestRule.unregisterIdlingResource(composeIdlingResource)
+                }
+            } else {
+                composeIdlingResource?.let {
+                    composeTestRule.registerIdlingResource(composeIdlingResource)
+                }
+            }
+        }
+    }
+
+    init {
+        context.driverContextChangeListener = listener
+    }
+
+
     private val syncComposeClock = Thread {
+
         while (!Server.isStopRequestReceived) {
             if (context.currentStrategyType == DriverContext.StrategyType.COMPOSE) {
                 composeTestRule.mainClock.advanceTimeByFrame()
             }
+
             // Let Android run measure, draw and in general any other async operations. AndroidComposeTestRule.android.kt:325
             Thread.sleep(ANDROID_ASYNC_WAIT_TIME_MS)
         }
