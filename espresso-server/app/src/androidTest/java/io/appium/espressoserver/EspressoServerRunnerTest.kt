@@ -79,6 +79,15 @@ class EspressoServerRunnerTest {
 
     init {
         context.driverContextChangeListener = listener
+        if (context.currentStrategyType == DriverContext.StrategyType.COMPOSE) {
+            composeIdlingResource?.let {
+                composeTestRule.registerIdlingResource(composeIdlingResource)
+            }
+        } else {
+            composeIdlingResource?.let {
+                composeTestRule.unregisterIdlingResource(composeIdlingResource)
+            }
+        }
     }
 
 
